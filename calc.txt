@@ -1,0 +1,815 @@
+import math
+import requests
+
+def currency_converter():
+    api_key = "490f8e1a6cb26290a1ca1189"  # Your API key
+    base_currency = input("Enter base currency (e.g., USD): ")
+    target_currency = input("Enter target currency (e.g., INR): ")
+    amount = float(input("Enter amount in base currency: "))
+
+    # Fetch conversion rates from the API
+    url = f"https://v6.exchangerate-api.com/v6/{api_key}/latest/{base_currency}"
+    
+    response = requests.get(url)
+    data = response.json()
+
+    if response.status_code == 200 and 'conversion_rates' in data:
+        conversion_rate = data['conversion_rates'].get(target_currency)
+        if conversion_rate:
+            converted_amount = amount * conversion_rate
+            print(f"Converted amount: {converted_amount:.2f} {target_currency}")
+        else:
+            print(f"Conversion rate for {target_currency} not found.")
+    else:
+        print("Error fetching conversion rate. Please check the base currency and try again.")
+
+def simple_interest():
+    principal = float(input("Enter principal amount: "))
+    rate = float(input("Enter rate of interest: "))
+    time = float(input("Enter time (in years): "))
+    si = (principal * rate * time) / 100
+    print(f"Principal Amount: {principal:.2f}")
+    print(f"Simple Interest: {si:.2f}")
+    print(f"Total Amount: {principal+si:.2f}")
+
+def compound_interest():
+    principal = float(input("Enter principal amount: "))
+    rate = float(input("Enter annual rate of interest (%): "))
+    time = float(input("Enter time (in years): "))
+
+    print("Choose compounding frequency:")
+    print("1. Daily")
+    print("2. Monthly")
+    print("3. Quarterly")
+    print("4. Semi-annually")
+    print("5. Annually")
+    
+    frequency_choice = input("Enter choice (1-5): ")
+    
+    if frequency_choice == '1':
+        n = 365  # Daily compounding
+    elif frequency_choice == '2':
+        n = 12  # Monthly compounding
+    elif frequency_choice == '3':
+        n = 4   # Quarterly compounding
+    elif frequency_choice == '4':
+        n = 2   # Semi-annual compounding
+    elif frequency_choice == '5':
+        n = 1   # Annual compounding
+    else:
+        print("Invalid choice, defaulting to annual compounding.")
+        n = 1
+
+    ci = principal * (1 + rate/(100*n))**(n*time) - principal
+    print(f"Principal Amount: {principal:.2f}")
+    print(f"Total Compound Interest: {ci:.2f}")
+    print(f"Total Amount: {principal+ci:.2f}")
+
+def fixed_deposit():
+    principal = float(input("Enter deposit amount: "))
+    rate = float(input("Enter annual rate of interest (%): "))
+
+    print("Choose time period format:")
+    print("1. Days (1 to 31)")
+    print("2. Months (1 to 12)")
+    print("3. Years")
+    time_choice = input("Enter choice (1-3): ")
+
+    if time_choice == '1':
+        while True:
+            time_in_days = float(input("Enter time (in days): "))
+            if 1 <= time_in_days <= 31:
+                break
+            else:
+                print("Invalid input. Days must be between 1 and 31.")
+        time = time_in_days / 365  # Convert days to years
+
+    elif time_choice == '2':
+        while True:
+            time_in_months = float(input("Enter time (in months): "))
+            if 1 <= time_in_months <= 12:
+                break
+            else:
+                print("Invalid input. Months must be between 1 and 12.")
+        time = time_in_months / 12  # Convert months to years
+
+    elif time_choice == '3':
+        time = float(input("Enter time (in years): "))
+    else:
+        print("Invalid choice, defaulting to years.")
+        time = float(input("Enter time (in years): "))
+
+    # Formula for compound interest with quarterly compounding: A = P * (1 + r/n)^(nt)
+    n = 4  # Quarterly compounding
+    maturity_amount = principal * (1 + rate / (100 * n)) ** (n * time)
+
+    # Estimated returns is the difference between maturity amount and invested amount
+    estimated_returns = maturity_amount - principal
+
+    # Display the results
+    print(f"\nInvested amount: {principal:.2f}")
+    print(f"Estimated Returns: {estimated_returns:.2f}")
+    print(f"Total Value: {maturity_amount:.2f}")
+
+def recurring_deposit():
+    monthly_deposit = float(input("Enter deposit amount: "))
+    rate = float(input("Enter annual rate of interest (%): "))
+
+    print("Choose deposit tenure frequency:")
+    print("1. Monthly")
+    print("2. Yearly")
+    
+    frequency_choice = input("Enter choice (1-2): ")
+
+    if frequency_choice == '1':
+        while True:
+            time_period = float(input("Enter the tenure in months (1-12): "))
+            if 1 <= time_period <= 12:
+                break
+            else:
+                print("Invalid input. Months must be between 1 and 12.")
+        tenure_years = time_period / 12  # Convert months to years
+        total_installments = time_period
+    elif frequency_choice == '2':
+        tenure_years = float(input("Enter the tenure in years: "))
+        total_installments = tenure_years * 12  # Convert years to months
+    else:
+        print("Invalid choice, defaulting to monthly tenure.")
+        while True:
+            time_period = float(input("Enter the tenure in months (1-12): "))
+            if 1 <= time_period <= 12:
+                break
+            else:
+                print("Invalid input. Months must be between 1 and 12.")
+        tenure_years = time_period / 12
+        total_installments = time_period
+
+    # Invested amount is the total deposit made
+    invested_amount = monthly_deposit * total_installments
+
+    # Formula for maturity amount in recurring deposit
+    maturity_amount = monthly_deposit * (((1 + (rate / 400))**(4 * tenure_years) - 1) / (1 - (1 + (rate / 400))**(-1/3)))
+
+    # Estimated return is the maturity amount minus invested amount
+    estimated_return = maturity_amount - invested_amount
+
+    print(f"\nInvestment Summary:")
+    print(f"Total Invested Amount: {invested_amount:.2f}")
+    print(f"Estimated Return: {estimated_return:.2f}")
+    print(f"Total Value at Maturity: {maturity_amount:.2f}")
+
+def savings_goal_calculator():
+    # Input values
+    goal_amount = float(input("Enter the savings goal amount: "))
+    monthly_contribution = float(input("Enter the monthly contribution amount: "))
+    annual_interest_rate = float(input("Enter the annual interest rate (%): "))
+
+    # Convert annual interest rate to a monthly rate
+    monthly_interest_rate = annual_interest_rate / 100 / 12
+
+    # Formula to calculate the number of months to reach the goal
+    if monthly_interest_rate == 0:
+        # If interest rate is 0, simply divide the goal amount by the monthly contribution
+        months = goal_amount / monthly_contribution
+    else:
+        # Use the formula to calculate the number of months
+        numerator = math.log((goal_amount * monthly_interest_rate + monthly_contribution) / monthly_contribution)
+        denominator = math.log(1 + monthly_interest_rate)
+        months = numerator / denominator
+
+    # Calculate total invested amount and estimated return
+    total_invested = monthly_contribution * months
+    estimated_return = goal_amount - total_invested
+
+    # Calculate years and remaining months
+    years = int(months // 12)
+    remaining_months = int(round(months % 12))
+
+    # Display results
+    print(f"\nInvestment Summary:")
+    print(f"Total Invested Amount: {total_invested:.2f}")
+    print(f"Estimated Return: {estimated_return:.2f}")
+    print(f"Total Value at Maturity: {goal_amount:.2f}")
+    print(f"Time Required: {years} years and {remaining_months} months")
+
+def loan_analysis_calculator():
+    def calculate_monthly_payment(loan_amount, annual_interest_rate, loan_term_years, loan_term_months):
+        total_months = loan_term_years * 12 + loan_term_months
+        monthly_interest_rate = (annual_interest_rate / 100) / 12
+        
+        # Monthly payment calculation
+        monthly_payment = loan_amount * monthly_interest_rate / (1 - (1 + monthly_interest_rate) ** -total_months)
+        
+        # Total payment and interest
+        total_payment = monthly_payment * total_months
+        total_interest = total_payment - loan_amount
+        annual_payment = monthly_payment * 12
+        
+        print(f"Monthly Payment: {monthly_payment:.2f}")
+        print(f"Total Payment: {total_payment:.2f}")
+        print(f"Total Interest: {total_interest:.2f}")
+        print(f"Annual Payment: {annual_payment:.2f}")
+        return monthly_payment
+
+    def calculate_loan_amount(monthly_payment, annual_interest_rate, loan_term_years, loan_term_months):
+        total_months = loan_term_years * 12 + loan_term_months
+        monthly_interest_rate = (annual_interest_rate / 100) / 12
+        
+        # Loan amount calculation
+        loan_amount = monthly_payment * (1 - (1 + monthly_interest_rate) ** -total_months) / monthly_interest_rate
+        
+        # Total payment and interest
+        total_payment = monthly_payment * total_months
+        total_interest = total_payment - loan_amount
+        annual_payment = monthly_payment * 12
+        
+        print(f"Loan Amount: {loan_amount:.2f}")
+        print(f"Total Payment: {total_payment:.2f}")
+        print(f"Total Interest: {total_interest:.2f}")
+        print(f"Annual Payment: {annual_payment:.2f}")
+        return loan_amount
+
+    def calculate_loan_term(loan_amount, annual_interest_rate, monthly_payment):
+        monthly_interest_rate = (annual_interest_rate / 100) / 12
+        
+        # Loan term calculation
+        total_months = - (math.log(1 - (loan_amount * monthly_interest_rate) / monthly_payment) / math.log(1 + monthly_interest_rate))
+        loan_term_years = int(total_months // 12)
+        loan_term_months = int(total_months % 12)
+        
+        # Total payment and interest
+        total_payment = monthly_payment * total_months
+        total_interest = total_payment - loan_amount
+        annual_payment = monthly_payment * 12
+        
+        print(f"Loan Term: {loan_term_years} years and {loan_term_months} months")
+        print(f"Total Payment: {total_payment:.2f}")
+        print(f"Total Interest: {total_interest:.2f}")
+        print(f"Annual Payment: {annual_payment:.2f}")
+        return loan_term_years, loan_term_months
+
+    def calculate_annual_interest_rate(loan_amount, loan_term_years, loan_term_months, monthly_payment):
+        total_months = loan_term_years * 12 + loan_term_months
+        tolerance = 1e-6
+        max_iterations = 1000
+        low = 0.0
+        high = 1.0  # Interest rate upper bound (100%)
+        
+        for _ in range(max_iterations):
+            mid = (low + high) / 2
+            monthly_interest_rate = mid / 12
+            guessed_payment = loan_amount * monthly_interest_rate / (1 - (1 + monthly_interest_rate) ** -total_months)
+            
+            if abs(guessed_payment - monthly_payment) < tolerance:
+                annual_interest_rate = mid * 100
+                
+                # Total payment and interest
+                total_payment = monthly_payment * total_months
+                total_interest = total_payment - loan_amount
+                annual_payment = monthly_payment * 12
+                
+                print(f"Annual Interest Rate: {annual_interest_rate:.2f}%")
+                print(f"Total Payment: {total_payment:.2f}")
+                print(f"Total Interest: {total_interest:.2f}")
+                print(f"Annual Payment: {annual_payment:.2f}")
+                return annual_interest_rate
+            
+            if guessed_payment < monthly_payment:
+                low = mid
+            else:
+                high = mid
+
+        raise ValueError("Could not converge to a solution")
+
+    # Main Menu for Loan Analysis Calculator
+    print("\nLoan Analysis Calculator:")
+    print("1. Calculate Monthly Payment")
+    print("2. Calculate Loan Amount")
+    print("3. Calculate Loan Term")
+    print("4. Calculate Annual Interest Rate")
+    
+    choice = input("Choose an option (1-4): ")
+
+    if choice == '1':
+        loan_amount = float(input("Enter loan amount: "))
+        annual_interest_rate = float(input("Enter annual interest rate (%): "))
+        loan_term_years = int(input("Enter loan term (years): "))
+        loan_term_months = int(input("Enter additional months (if any): "))
+        calculate_monthly_payment(loan_amount, annual_interest_rate, loan_term_years, loan_term_months)
+    
+    elif choice == '2':
+        monthly_payment = float(input("Enter monthly payment: "))
+        annual_interest_rate = float(input("Enter annual interest rate (%): "))
+        loan_term_years = int(input("Enter loan term (years): "))
+        loan_term_months = int(input("Enter additional months (if any): "))
+        calculate_loan_amount(monthly_payment, annual_interest_rate, loan_term_years, loan_term_months)
+    
+    elif choice == '3':
+        loan_amount = float(input("Enter loan amount: "))
+        annual_interest_rate = float(input("Enter annual interest rate (%): "))
+        monthly_payment = float(input("Enter monthly payment: "))
+        calculate_loan_term(loan_amount, annual_interest_rate, monthly_payment)
+    
+    elif choice == '4':
+        loan_amount = float(input("Enter loan amount: "))
+        loan_term_years = int(input("Enter loan term (years): "))
+        loan_term_months = int(input("Enter additional months (if any): "))
+        monthly_payment = float(input("Enter monthly payment: "))
+        calculate_annual_interest_rate(loan_amount, loan_term_years, loan_term_months, monthly_payment)
+
+    else:
+        print("Invalid option. Please try again.")
+
+def retirement_savings_calculator():
+    def calculate_monthly_savings(currently_saved, amount_at_retirement, years_until_retirement, annual_return_rate):
+        r = (annual_return_rate / 100) / 12  # Monthly interest rate
+        n = years_until_retirement * 12  # Total number of months
+        
+        # Future value calculation for monthly saving needed
+        monthly_savings = (amount_at_retirement - currently_saved * (1 + r) ** n) / (((1 + r) ** n - 1) / r)
+        
+        print(f"Monthly Savings Needed: {monthly_savings:.2f}")
+        return monthly_savings
+
+    def calculate_retirement_amount(currently_saved, monthly_savings, years_until_retirement, annual_return_rate):
+        r = (annual_return_rate / 100) / 12  # Monthly interest rate
+        n = years_until_retirement * 12  # Total number of months
+        
+        # Future value calculation for retirement amount
+        retirement_amount = currently_saved * (1 + r) ** n + monthly_savings * (((1 + r) ** n - 1) / r)
+        
+        print(f"Amount at Retirement: {retirement_amount:.2f}")
+        return retirement_amount
+
+    def calculate_years_until_retirement(currently_saved, amount_at_retirement, monthly_savings, annual_return_rate):
+        r = (annual_return_rate / 100) / 12  # Monthly interest rate
+        P = monthly_savings
+        C = currently_saved
+        
+        # Time calculation in months
+        total_months = math.log((amount_at_retirement * r + P) / (C * r + P)) / math.log(1 + r)
+        years = int(total_months // 12)
+        months = int(total_months % 12)
+        
+        print(f"Years until Retirement: {years} years and {months} months")
+        return years, months
+
+    def calculate_annual_return_rate(currently_saved, amount_at_retirement, years_until_retirement, monthly_savings):
+        low = 0.0
+        high = 1.0  # Interest rate upper bound (100%)
+        tolerance = 1e-6
+        max_iterations = 1000
+        n = years_until_retirement * 12  # Total number of months
+        
+        for _ in range(max_iterations):
+            mid = (low + high) / 2
+            r = mid / 12  # Monthly interest rate
+            guessed_retirement_amount = currently_saved * (1 + r) ** n + monthly_savings * (((1 + r) ** n - 1) / r)
+            
+            if abs(guessed_retirement_amount - amount_at_retirement) < tolerance:
+                annual_return_rate = mid * 100
+                print(f"Annual Return Rate: {annual_return_rate:.2f}%")
+                return annual_return_rate
+            
+            if guessed_retirement_amount < amount_at_retirement:
+                low = mid
+            else:
+                high = mid
+
+        raise ValueError("Could not converge to a solution")
+
+    # Main user interaction
+    print("\nRetirement Savings Calculator:")
+    print("1. How much should I save monthly?")
+    print("2. How much will I have at retirement?")
+    print("3. How long should I save for retirement?")
+    print("4. How much should my annual return rate be?")
+    
+    choice = input("Choose an option (1-4): ")
+
+    if choice == '1':
+        currently_saved = float(input("Enter the amount you have currently saved: "))
+        amount_at_retirement = float(input("Enter the amount you want at retirement: "))
+        years_until_retirement = int(input("Enter the number of years until retirement: "))
+        annual_return_rate = float(input("Enter the annual return rate (%): "))
+        calculate_monthly_savings(currently_saved, amount_at_retirement, years_until_retirement, annual_return_rate)
+    
+    elif choice == '2':
+        currently_saved = float(input("Enter the amount you have currently saved: "))
+        monthly_savings = float(input("Enter the monthly savings amount: "))
+        years_until_retirement = int(input("Enter the number of years until retirement: "))
+        annual_return_rate = float(input("Enter the annual return rate (%): "))
+        calculate_retirement_amount(currently_saved, monthly_savings, years_until_retirement, annual_return_rate)
+    
+    elif choice == '3':
+        currently_saved = float(input("Enter the amount you have currently saved: "))
+        amount_at_retirement = float(input("Enter the amount you want at retirement: "))
+        monthly_savings = float(input("Enter the monthly savings amount: "))
+        annual_return_rate = float(input("Enter the annual return rate (%): "))
+        calculate_years_until_retirement(currently_saved, amount_at_retirement, monthly_savings, annual_return_rate)
+    
+    elif choice == '4':
+        currently_saved = float(input("Enter the amount you have currently saved: "))
+        amount_at_retirement = float(input("Enter the amount you want at retirement: "))
+        years_until_retirement = int(input("Enter the number of years until retirement: "))
+        monthly_savings = float(input("Enter the monthly savings amount: "))
+        calculate_annual_return_rate(currently_saved, amount_at_retirement, years_until_retirement, monthly_savings)
+
+    else:
+        print("Invalid option. Please try again.")
+
+def stock_return_calculator():
+    buy_price = float(input("Enter Buy Price: "))
+    buy_qty = int(input("Enter Buy Quantity: "))
+    sell_price = float(input("Enter Sell Price: "))
+    sell_qty = int(input("Enter Sell Quantity: "))
+    # Calculating basic amounts
+    invested_amount = buy_price * buy_qty
+    total_sell_amount = sell_price * sell_qty
+    gross_return = total_sell_amount - invested_amount
+    
+    # Display profit or loss explicitly
+    if gross_return > 0:
+        result_type = "Profit"
+    else:
+        result_type = "Loss"
+    
+    gross_return_percentage = (gross_return / invested_amount) * 100
+
+    # Tax calculations
+    stt_ctt_buy = 0.001 * invested_amount  # 0.1% STT for buy
+    stt_ctt_sell = 0.001 * total_sell_amount  # 0.1% STT for sell
+    transaction_charges_buy = 0.0000322 * invested_amount  # 0.00322% for buy
+    transaction_charges_sell = 0.0000322 * total_sell_amount  # 0.00322% for sell
+    stamp_duty = 0.00015 * invested_amount  # 0.015% stamp duty for buy
+    dp_charges = 15  # Flat DP charges
+
+    # Total taxes for buy and sell
+    brokerage = 0  # Given as 0
+    gst_buy = 0.18 * (brokerage + transaction_charges_buy)
+    gst_sell = 0.18 * (brokerage + transaction_charges_sell)
+
+    total_tax_buy = stt_ctt_buy + transaction_charges_buy + stamp_duty + gst_buy + dp_charges
+    total_tax_sell = stt_ctt_sell + transaction_charges_sell + gst_sell
+    total_tax = total_tax_buy + total_tax_sell
+
+    # Net return after taxes
+    net_return = gross_return - total_tax
+    net_return_percentage = (net_return / invested_amount) * 100
+
+    # Results display
+    print(f"Invested Amount: ₹{invested_amount:.2f}")
+    print(f"Total Sell Amount: ₹{total_sell_amount:.2f}")
+    print("\nBefor Tax Details:")
+    print(f"{result_type}: ₹{abs(gross_return):.2f}")
+    print(f"Gross {result_type} Percentage: {gross_return_percentage:.2f}%")
+    print("\nTax Details:")
+    print(f"STT/CTT on Buy: ₹{stt_ctt_buy:.2f}")
+    print(f"STT/CTT on Sell: ₹{stt_ctt_sell:.2f}")
+    print(f"Transaction Charges on Buy: ₹{transaction_charges_buy:.2f}")
+    print(f"Transaction Charges on Sell: ₹{transaction_charges_sell:.2f}")
+    print(f"Stamp Duty: ₹{stamp_duty:.2f}")
+    print(f"DP Charges: ₹{dp_charges:.2f}")
+    print(f"GST on Buy: ₹{gst_buy:.2f}")
+    print(f"GST on Sell: ₹{gst_sell:.2f}")
+    print(f"Total Tax: ₹{total_tax:.2f}")
+    print("\nAfter Tax Details:")
+    print(f"Net {result_type}: ₹{abs(net_return):.2f}")
+    print(f"Net {result_type} Percentage: {net_return_percentage:.2f}%")
+
+def tip_calculator():
+    # User inputs
+    bill_amount = float(input("Enter Bill Amount: ₹"))
+    tip_percentage = float(input("Enter Tip Percentage: "))
+    split = int(input("Enter the number of people to split the bill: "))
+    
+    # Calculations
+    total_tip = (tip_percentage / 100) * bill_amount
+    total_check = bill_amount + total_tip
+    each_total_amount = total_check / split
+    each_pay = total_tip / split
+
+    # Results display
+    print(f"\nTotal Tip Amount: ₹{total_tip:.2f}")
+    print(f"Total Check (Bill + Tip): ₹{total_check:.2f}")
+    print(f"Each Pay Amount (Bill + Tip per person): ₹{each_total_amount:.2f}")
+    print(f"Each Pay (Tip per person): ₹{each_pay:.2f}")
+
+def lumpsum_calculator():
+    def format_amount(amount):
+        """Format the amount into lakhs or crores for better readability."""
+        if amount >= 1e7:
+            return f"₹{amount:.2f} ({amount / 1e7:.2f} Crores)"
+        elif amount >= 1e5:
+            return f"₹{amount:.2f} ({amount / 1e5:.2f} Lakhs)"
+        else:
+            return f"₹{amount:.2f}"
+
+    # User inputs
+    investment_amount = float(input("Enter Investment Lumpsum Amount: ₹"))
+    
+    while True:
+        expected_rate = float(input("Enter Expected Rate of Interest (1-50%): "))
+        if 1 <= expected_rate <= 50:
+            break
+        else:
+            print("Invalid input. Please enter a rate between 1 and 50.")
+
+    while True:
+        tenure_years = int(input("Enter Tenure (in years, 1-50): "))
+        if 1 <= tenure_years <= 50:
+            break
+        else:
+            print("Invalid input. Please enter a tenure between 1 and 50.")
+
+    # Calculate maturity amount using compound interest formula
+    annual_interest_rate = expected_rate / 100
+    maturity_amount = investment_amount * (1 + annual_interest_rate) ** tenure_years
+    Total_earnings=maturity_amount-investment_amount
+
+    # Display results
+    print("\n--- Lumpsum Investment Details ---")
+    print(f"Total Investment Amount: {format_amount(investment_amount)}")
+    print(f"Total Earnings: {format_amount(Total_earnings)}")
+    print(f"Maturity Amount: {format_amount(maturity_amount)}")
+
+
+
+def sip_calculator():
+    def format_amount(amount):
+        """Format the amount into lakhs or crores for better readability."""
+        if amount >= 1e7:
+            return f"₹ {amount:.2f} ({amount / 1e7:.2f} Crores)"
+        elif amount >= 1e5:
+            return f"₹ {amount:.2f} ({amount / 1e5:.2f} Lakhs)"
+        elif amount >= 1e3:
+            return f"₹ {amount:.2f} ({amount / 1e3:.2f} Thousands)"
+        else:
+            return f"₹ {amount:.2f}"
+
+    # User inputs
+    print("Select Investment Frequency:")
+    print("1. Monthly")
+    print("2. Yearly")
+    frequency_choice = int(input("Enter choice (1 or 2): "))
+    
+    if frequency_choice == 1:
+        deposits_per_year = 12
+    elif frequency_choice == 2:
+        deposits_per_year = 1
+    else:
+        print("Invalid choice. Exiting.")
+        return
+
+    monthly_investment = float(input(f"Enter Investment Amount per {'Month' if frequency_choice == 1 else 'Year'}: ₹"))
+
+    while True:
+        expected_rate = float(input("Enter Expected Rate of Return (1-50%): "))
+        if 1 <= expected_rate <= 50:
+            break
+        else:
+            print("Invalid input. Please enter a rate between 1 and 50.")
+
+    while True:
+        tenure_years = int(input("Enter Tenure (in years, 1-50): "))
+        if 1 <= tenure_years <= 50:
+            break
+        else:
+            print("Invalid input. Please enter a tenure between 1 and 50.")
+
+    # Annual rate divided by 12 months or 1 year depending on the frequency
+    period_rate = (expected_rate / 100) / deposits_per_year
+    total_periods = tenure_years * deposits_per_year
+
+    # Future value calculation using the SIP formula
+    future_value = monthly_investment * (((1 + period_rate) ** total_periods - 1) / period_rate) * (1 + period_rate)
+
+    # Total amount deposited
+    total_amount_deposited = monthly_investment * total_periods
+
+    # Total earnings (future value - total amount deposited)
+    total_earnings = future_value - total_amount_deposited
+
+    # Display results
+    print("\n--- SIP Investment Details ---")
+    print(f"Your Future Value: {format_amount(future_value)}")
+    print(f"Total Earnings: {format_amount(total_earnings)}")
+    print(f"Total Amount Deposited: {format_amount(total_amount_deposited)}")
+
+def step_up_calculator():
+    # Helper function to format values in Indian currency units
+    def format_currency(value):
+        """Format value in Indian currency units."""
+        if value >= 1_00_00_00_000:  # 100 crores
+            return f"₹ {value / 1_00_00_00_000:.2f} Crores"
+        elif value >= 1_00_00_000:  # 1 crore
+            return f"₹ {value / 1_00_00_000:.2f} Crores"
+        elif value >= 1_00_000:  # 1 lakh
+            return f"₹ {value / 1_00_000:.2f} Lakhs"
+        elif value >= 1_000:  # 1 thousand
+            return f"₹ {value / 1_000:.2f} Thousand"
+        else:
+            return f"₹ {value:.2f}"
+
+    # Input function with boundaries and validation
+    def get_input_with_validation(prompt, value_type=float, lower_bound=None, upper_bound=None):
+        while True:
+            try:
+                value = value_type(input(prompt))
+                if lower_bound is not None and value < lower_bound:
+                    print(f"Value must be greater than or equal to {lower_bound}.")
+                    continue
+                if upper_bound is not None and value > upper_bound:
+                    print(f"Value must be less than or equal to {upper_bound}.")
+                    continue
+                return value
+            except ValueError:
+                print("Invalid input, please try again.")
+
+    # Get user input with validation
+    investment = get_input_with_validation("Enter Monthly Investment Amount: ₹", float, 0.01)
+    growth_rate = get_input_with_validation("Enter Growth in Investment Amount (in %): ", float, 0, 100)
+    rate_of_return = get_input_with_validation("Enter Expected Rate of Return (in %): ", float, 1, 50)
+    tenure = get_input_with_validation("Enter Tenure (in years): ", int, 1, 50)
+
+    # Validating boundaries
+    if tenure < 1 or tenure > 50:
+        return "Tenure must be between 1 and 50 years."
+    if rate_of_return < 1 or rate_of_return > 50:
+        return "Rate of return must be between 1% and 50%."
+    if growth_rate < 0:
+        return "Growth rate must be non-negative."
+
+    # Converting percentage to decimal
+    annual_rate = rate_of_return / 100
+    monthly_rate = annual_rate / 12
+    total_months = tenure * 12
+    
+    future_value = 0
+    total_deposit = 0
+
+    for year in range(1, tenure + 1):
+        # Calculate the investment amount for the current year (growth starts from the second year)
+        current_investment = investment * ((1 + growth_rate / 100) ** (year - 1))
+        for month in range(12):
+            # For each month, calculate future value and total deposit
+            months_remaining = total_months - ((year - 1) * 12 + month)
+            future_value += current_investment * ((1 + monthly_rate) ** months_remaining)
+            total_deposit += current_investment
+
+    # Total Earnings
+    total_earnings = future_value - total_deposit
+    
+    # Formatting output using the currency formatter
+    future_value_formatted = format_currency(future_value)
+    total_earnings_formatted = format_currency(total_earnings)
+    total_deposit_formatted = format_currency(total_deposit)
+    
+    print("\n--- Step-Up SIP Investment Details ---")
+    print(f"Total Amount Invested: {total_deposit_formatted}\n"
+          f"Total Earnings: {total_earnings_formatted}\n"
+          f"Total Corpus Value: {future_value_formatted}")
+
+def cagr_calculator():
+    def calculate_cagr(beginning_value, ending_value, tenure):
+        """Calculate the Compound Annual Growth Rate (CAGR)."""
+        return ((ending_value / beginning_value) ** (1 / tenure) - 1) * 100
+
+    # User inputs
+    beginning_value = float(input("Enter Beginning Value: ₹"))
+    ending_value = float(input("Enter Ending Value: ₹"))
+    tenure = int(input("Enter Tenure (in years, up to 50): "))
+
+    # Validate tenure
+    if tenure < 1 or tenure > 50:
+        return "Tenure must be between 1 and 50 years."
+
+    # Calculate CAGR
+    cagr_return = calculate_cagr(beginning_value, ending_value, tenure)
+
+    # Display results
+    print(f"CAGR Return: {cagr_return:.2f}%")
+
+def ppf_calculator():
+    def format_amount(amount):
+        """Format the amount into lakhs or crores for better readability."""
+        if amount >= 1e7:
+            return f"₹{amount:.2f} ({amount / 1e7:.2f} Crores)"
+        elif amount >= 1e5:
+            return f"₹{amount:.2f} ({amount / 1e5:.2f} Lakhs)"
+        else:
+            return f"₹{amount:.2f}"
+
+    # User inputs
+    print("Select Deposit Frequency:")
+    print("1. Monthly")
+    print("2. Quarterly")
+    print("3. Semi-Annually")
+    print("4. Annually")
+    frequency_choice = int(input("Enter choice (1-4): "))
+    
+    investment_amount = float(input("Enter Investment Amount (per deposit): ₹"))
+    tenure_years = int(input("Enter Tenure (in years): "))
+
+    # Determine frequency multiplier
+    if frequency_choice == 1:
+        deposits_per_year = 12
+    elif frequency_choice == 2:
+        deposits_per_year = 4
+    elif frequency_choice == 3:
+        deposits_per_year = 2
+    elif frequency_choice == 4:
+        deposits_per_year = 1
+    else:
+        print("Invalid choice. Exiting.")
+        return
+
+    total_deposited = investment_amount * deposits_per_year * tenure_years
+    maturity_amount = 0
+    maturity_details = []
+    annual_interest_rate = 7.1 / 100  # Annual interest rate
+
+    for year in range(tenure_years):
+        # Add deposits for the year
+        annual_deposit = investment_amount * deposits_per_year
+        maturity_amount += annual_deposit
+        
+        # Calculate interest for the current balance
+        interest_for_year = maturity_amount * annual_interest_rate
+        maturity_amount += interest_for_year
+        
+        # Store yearly details
+        maturity_details.append({
+            'Year': year + 1,
+            'Total Deposited': investment_amount * deposits_per_year * (year + 1),
+            'Maturity Amount': maturity_amount
+        })
+
+    # Display results
+    print("\n--- PPF Investment Details ---")
+    print(f"Total Amount Deposited: {format_amount(total_deposited)}")
+    
+    # Total interest earned
+    interest_earned = maturity_amount - total_deposited
+    print(f"Total Interest Earned: {format_amount(interest_earned)}")
+    print(f"Maturity Amount: {format_amount(maturity_amount)}")
+
+def main():
+    while True:
+        print("\nFinancial Calculator Menu:")
+        print("1. Currency Converter")
+        print("2. Simple Interest")
+        print("3. Compound Interest")
+        print("4. Fixed Deposit")
+        print("5. Recurring Deposit")
+        print("6. Savings Goal Calculator")
+        print("7. Loan Analysis Calculator")
+        print("8. Retirement Planner")
+        print("9. Stock Return Calculator")
+        print("10. Tip Calculator")
+        print("11. LumpSum Calculator")
+        print("12. PPF Calculator")
+        print("13. SIP Calculator")
+        print("14. Step-Up Calculator")
+        print("15. Exit")
+
+        choice = input("Choose an option (1-13): ")
+
+        if choice == '1':
+            currency_converter()
+        elif choice == '2':
+            simple_interest()
+        elif choice == '3':
+            compound_interest()
+        elif choice == '4':
+            fixed_deposit()
+        elif choice == '5':
+            recurring_deposit()
+        elif choice == '6':
+            savings_goal_calculator()
+        elif choice == '7':
+            loan_analysis_calculator()
+        elif choice == '8':
+            retirement_savings_calculator()
+        elif choice == '9':
+            stock_return_calculator()
+        elif choice == '10':
+            tip_calculator()
+        elif choice == '11':
+            lumpsum_calculator()
+        elif choice == '12':
+            ppf_calculator()
+        elif choice == '13':
+            sip_calculator()
+        elif choice == '14':
+            step_up_calculator()
+        elif choice == '15':
+            cagr_calculator()
+        elif choice == '16':
+            print("Exiting...")
+            break
+        else:
+            print("Invalid option. Please try again.")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PPF Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body, html {
+            height: 100%; /* Set height to 100% for body and html */
+            margin: 0; /* Remove default margin */
+            background-color: #f5f5f5; /* Background color */
+            overflow-y: auto; /* Enable vertical scrolling */
+        }
+        .container {
+            height: 100%; /* Set container height to 100% */
+            display: flex; /* Use flexbox for layout */
+            flex-direction: column; /* Stack elements vertically */
+            justify-content: flex-start; /* Align items at the top */
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff; /* Background color for container */
+        }
+        h2 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+        }
+        #result_message {
+            margin-top: 30px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .output-section {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-top: 30px; /* Add margin for spacing */
+            overflow-y: auto; /* Enable vertical scrolling in this section */
+            max-height: 400px; /* Set a max height for the output section */
+        }
+        /* Add responsive canvas styles */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px; /* Set a fixed height for the charts */
+            margin-top: 20px; /* Add margin for spacing */
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h2 class="text-center">PPF Calculator</h2>
+    <div class="row">
+        <div class="col-md-6">
+            <form id="ppf-calculator-form">
+                <div class="mb-3">
+                    <label for="investment_amount" class="form-label">Investment Amount (₹):</label>
+                    <input type="number" class="form-control" id="investment_amount" name="investment_amount" required>
+                </div>
+                <div class="mb-3">
+                    <label for="frequency" class="form-label">Frequency of Deposit:</label>
+                    <select name="frequency" id="frequency" class="form-select">
+                        <option value="1">Monthly</option>
+                        <option value="2">Quarterly</option>
+                        <option value="3">Half-Yearly</option>
+                        <option value="4">Annually</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="tenure_years" class="form-label">Tenure (Years):</label>
+                    <input type="number" class="form-control" id="tenure_years" name="tenure_years" required>
+                </div>
+                <div class="mb-3">
+                    <label for="inflation_rate" class="form-label">Inflation Rate (%):</label>
+                    <input type="number" class="form-control" id="inflation_rate" name="inflation_rate" step="0.01" value="0" required>
+                    <small class="form-text text-muted">Check inflation rate at <a href="https://tradingeconomics.com/" target="_blank">Trading Economics</a>.</small>
+                </div>
+                <button type="submit" class="btn btn-custom">Calculate</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="output-section">
+                <div id="result_message"></div>
+                <!-- Move the pie chart container below the result section -->
+                <div class="chart-container" style="display: none;">
+                    <canvas id="myPieChart"></canvas>
+                </div>
+                <!-- Line chart can still be displayed here -->
+                <div class="chart-container" style="display: none;">
+                    <canvas id="myLineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    $(document).ready(function () {
+        $('#ppf-calculator-form').on('submit', function (e) {
+            e.preventDefault();
+            const formData = $(this).serialize();
+            $.ajax({
+                type: 'POST',
+                url: '/ppf_calculator',
+                data: formData,
+                success: function (response) {
+                    const result = response;
+
+                    // Update results
+                    $('#result_message').html(`
+                        Total Deposited: ${result.total_deposited}<br>
+                        Interest Earned: ${result.interest_earned}<br>
+                        Maturity Amount: ${result.maturity_amount}<br>
+                        Real Maturity Amount (after inflation): ${result.real_maturity_amount}<br>
+                        Real Interest Earned (after inflation): ${result.real_interest_earned}
+                    `);
+
+                    // Update charts
+                    const totalDeposited = parseFloat(result.total_deposited.replace(/₹| Lakhs| Crores/g, '').replace(/,/g, '')); // Remove symbols for calculation
+                    const interestEarned = parseFloat(result.interest_earned.replace(/₹| Lakhs| Crores/g, '').replace(/,/g, ''));
+                    const maturityAmount = parseFloat(result.maturity_amount.replace(/₹| Lakhs| Crores/g, '').replace(/,/g, ''));
+
+                    updateCharts(totalDeposited, interestEarned, maturityAmount, parseInt($('#tenure_years').val()));
+                }
+            });
+        });
+
+        function updateCharts(totalDeposited, interestEarned, maturityAmount, tenureYears) {
+            // Pie Chart
+            const ctxPie = document.getElementById('myPieChart').getContext('2d');
+            const myPieChart = new Chart(ctxPie, {
+                type: 'pie',
+                data: {
+                    labels: ['Total Deposited', 'Interest Earned'],
+                    datasets: [{
+                        data: [totalDeposited, interestEarned],
+                        backgroundColor: ['#36a2eb', '#ff6384'],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true, // Enable responsive scaling
+                    maintainAspectRatio: false, // Disable aspect ratio to adjust to parent
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    }
+                }
+            });
+            $('.chart-container').show(); // Show the chart container
+
+            // Line Chart
+            const ctxLine = document.getElementById('myLineChart').getContext('2d');
+            const years = Array.from({length: tenureYears}, (_, i) => i + 1);
+            const maturityValues = years.map(year => {
+                return (totalDeposited * 12 * year) + interestEarned; // Assuming monthly deposits
+            });
+
+            const myLineChart = new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: years,
+                    datasets: [{
+                        label: 'Maturity Amount Over Years (₹)',
+                        data: maturityValues,
+                        fill: false,
+                        borderColor: '#36a2eb',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Years'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Maturity Amount (₹)'
+                            },
+                            beginAtZero: true
+                        }
+                    },
+                    animation: {
+                        duration: 1000,
+                        easing: 'easeInOutQuart'
+                    }
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

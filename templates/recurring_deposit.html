@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recurring Deposit Calculator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f7f9fc;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container-fluid {
+            display: flex;
+            height: 100vh;
+        }
+        .form-container, .result-container {
+            width: 50%;
+            padding: 40px;
+        }
+        .form-container {
+            background-color: #ffffff;
+            border-right: 2px solid #e9ecef;
+        }
+        .result-container {
+            background-color: #ffffff;
+            text-align: center;
+        }
+        h1, h3 {
+            color: #28a745;
+        }
+        .form-group label {
+            font-weight: bold;
+        }
+        .btn-custom {
+            background-color: #28a745;
+            color: #ffffff;
+            width: 100%;
+        }
+        .btn-custom:hover {
+            background-color: #218838;
+        }
+        #chartContainer {
+            max-width: 400px;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <!-- Form Section -->
+    <div class="form-container">
+        <h1>Recurring Deposit Calculator</h1>
+        <form method="POST" action="/recurring_deposit">
+            <div class="form-group">
+                <label for="monthly_deposit">Monthly Deposit:</label>
+                <input type="number" class="form-control" id="monthly_deposit" name="monthly_deposit" min="1" step="0.01" required>
+            </div>
+            <div class="form-group">
+                <label for="rate">Interest Rate (%):</label>
+                <input type="number" class="form-control" id="rate" name="rate" step="0.01" min="0" required>
+            </div>
+            <div class="form-group">
+                <label for="tenure_value">Tenure:</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="tenure_value" name="tenure_value" min="1" step="1" required>
+                    <div class="input-group-append">
+                        <select class="form-control" id="tenure_type" name="tenure_type">
+                            <option value="months">Months</option>
+                            <option value="years">Years</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="inflation_rate">Inflation Rate (%):</label>
+                <input type="number" class="form-control" id="inflation_rate" name="inflation_rate" step="0.01" min="0" required>
+                <small><a href="https://tradingeconomics.com/" target="_blank">Check current inflation rate</a></small>
+            </div>
+            <button type="submit" class="btn btn-custom">Calculate</button>
+        </form>
+    </div>
+
+    <!-- Result Section -->
+    <div class="result-container">
+        {% if invested_amount %}
+            <h3>Calculation Results</h3>
+            <p><strong>Invested Amount:</strong> ₹{{ invested_amount }}</p>
+            <p><strong>Estimated Return:</strong> ₹{{ estimated_return }}</p>
+            <p><strong>Maturity Amount:</strong> ₹{{ maturity_amount }}</p>
+
+            <div id="chartContainer">
+                <canvas id="rdChart"></canvas>
+            </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    const ctx = document.getElementById('rdChart').getContext('2d');
+                    const rdChart = new Chart(ctx, {
+                        type: 'pie',
+                        data: {
+                            labels: ['Invested Amount', 'Estimated Return'],
+                            datasets: [{
+                                data: [ invested_amount ,  estimated_return ],
+                                backgroundColor: ['#ff6f61', '#ffb74d'],
+                                borderColor: '#ffffff',
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            title: {
+                                display: true,
+                                text: 'Investment Breakdown',
+                                fontSize: 18,
+                                fontColor: '#333'
+                            },
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    });
+                });
+            </script>
+        {% endif %}
+    </div>
+</div>
+
+</body>
+</html>

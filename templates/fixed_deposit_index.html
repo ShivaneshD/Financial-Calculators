@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fixed Deposit Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            margin-top: 50px;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+        }
+        .output-section {
+            background-color: #e9ecef;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            max-height: 400px;
+        }
+        .chart-container {
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Fixed Deposit Calculator</h2>
+        <div class="row">
+            <!-- Left Side: Input Form -->
+            <div class="col-md-6">
+                <form id="fixed-deposit-form">
+                    <div class="mb-3">
+                        <label for="principal" class="form-label">Principal Amount (₹):</label>
+                        <input type="number" class="form-control" id="principal" name="principal" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="rate" class="form-label">Annual Interest Rate (%):</label>
+                        <input type="number" class="form-control" id="rate" name="rate" step="0.01" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="inflation_rate" class="form-label">Inflation Rate (%):</label>
+                        <input type="number" class="form-control" id="inflation_rate" name="inflation_rate" step="0.01" required>
+                        <small><a href="https://tradingeconomics.com/country-list/inflation-rate" target="_blank">Check current inflation rates</a></small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="time_choice" class="form-label">Time Period:</label>
+                        <select class="form-select" id="time_choice" name="time_choice" required>
+                            <option value="days">Days</option>
+                            <option value="months">Months</option>
+                            <option value="years">Years</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="time-inputs">
+                        <div id="days-input" style="display: none;">
+                            <label for="time_in_days" class="form-label">Time in Days:</label>
+                            <input type="number" class="form-control" id="time_in_days" name="time_in_days">
+                        </div>
+                        <div id="months-input" style="display: none;">
+                            <label for="time_in_months" class="form-label">Time in Months:</label>
+                            <input type="number" class="form-control" id="time_in_months" name="time_in_months">
+                        </div>
+                        <div id="years-input" style="display: none;">
+                            <label for="time_in_years" class="form-label">Time in Years:</label>
+                            <input type="number" class="form-control" id="time_in_years" name="time_in_years">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-custom">Calculate</button>
+                </form>
+            </div>
+
+            <!-- Right Side: Results Display -->
+            <div class="col-md-6">
+                <div class="output-section" id="result_section" style="display: none;">
+                    <h3>Calculation Result</h3>
+                    <p><strong>Principal Amount:</strong> ₹<span id="principal_result"></span></p>
+                    <p><strong>Estimated Returns:</strong> ₹<span id="estimated_returns"></span></p>
+                    <p><strong>Maturity Amount:</strong> ₹<span id="maturity_amount"></span></p>
+                    <div class="chart-container">
+                        <canvas id="fdChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const timeChoice = document.getElementById('time_choice');
+        const timeInputs = document.getElementById('time-inputs');
+
+        // Show relevant time input based on selected period
+        timeChoice.addEventListener('change', function() {
+            const selected = timeChoice.value;
+            document.getElementById('days-input').style.display = selected === 'days' ? 'block' : 'none';
+            document.getElementById('months-input').style.display = selected === 'months' ? 'block' : 'none';
+            document.getElementById('years-input').style.display = selected === 'years' ? 'block' : 'none';
+        });
+
+        // Calculate FD result and display on form submission
+        document.getElementById('fixed-deposit-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            // Get input values
+            const principal = parseFloat(document.getElementById('principal').value);
+            const rate = parseFloat(document.getElementById('rate').value);
+            const inflationRate = parseFloat(document.getElementById('inflation_rate').value);
+            const timeChoice = document.getElementById('time_choice').value;
+            let time = 0;
+
+            if (timeChoice === 'days') {
+                time = parseFloat(document.getElementById('time_in_days').value) / 365;
+            } else if (timeChoice === 'months') {
+                time = parseFloat(document.getElementById('time_in_months').value) / 12;
+            } else if (timeChoice === 'years') {
+                time = parseFloat(document.getElementById('time_in_years').value);
+            }
+
+            const adjustedRate = rate - inflationRate;
+            const n = 4; // Quarterly compounding
+            const maturityAmount = principal * (1 + adjustedRate / (100 * n)) ** (n * time);
+            const estimatedReturns = maturityAmount - principal;
+
+            // Update result section
+            document.getElementById('principal_result').innerText = principal.toFixed(2);
+            document.getElementById('estimated_returns').innerText = estimatedReturns.toFixed(2);
+            document.getElementById('maturity_amount').innerText = maturityAmount.toFixed(2);
+
+            // Update chart
+            const chartData = {
+                labels: ['Invested Amount', 'Maturity Amount'],
+                datasets: [{
+                    data: [principal, maturityAmount],
+                    backgroundColor: ['#007bff', '#28a745'],
+                    hoverOffset: 4
+                }]
+            };
+            const fdChart = new Chart(
+                document.getElementById('fdChart'),
+                {
+                    type: 'pie',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: { enabled: true }
+                        },
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true
+                        }
+                    }
+                }
+            );
+
+            // Show result section
+            document.getElementById('result_section').style.display = 'block';
+        });
+    </script>
+</body>
+</html>

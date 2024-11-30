@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step-Up SIP Calculator</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom Styles -->
+    <style>
+        body {
+            height: 100vh; /* Full height */
+            margin: 0;
+            display: flex;
+            align-items: center; /* Center vertically */
+            justify-content: center; /* Center horizontally */
+            background: linear-gradient(135deg, #f3e5f5, #e1f5fe);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            max-width: 1200px; /* Wider container */
+            width: 100%; /* Full width */
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-wrap: wrap; /* Allow wrapping of sections */
+            background-color: #ffffff;
+        }
+        .input-section, .result-section {
+            flex: 1;
+            margin: 10px;
+            min-width: 300px; /* Minimum width for better responsiveness */
+        }
+        h2 {
+            color: #4a90e2;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+        .btn-custom {
+            background: linear-gradient(45deg, #4a90e2, #9013fe);
+            color: white;
+            width: 100%;
+            border: none;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 25px;
+            transition: background 0.3s ease;
+        }
+        .btn-custom:hover {
+            background: linear-gradient(45deg, #9013fe, #4a90e2);
+        }
+        #result_message {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #f1f8ff;
+            border-left: 5px solid #4a90e2;
+            border-radius: 5px;
+            font-size: 18px;
+            color: #333333;
+        }
+        canvas {
+            margin-top: 30px;
+        }
+        .link-info {
+            margin-left: 5px;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="input-section">
+        <h2>Step-Up SIP Calculator</h2>
+        <form method="POST" id="stepup-sip-calculator-form">
+            <div class="mb-4">
+                <label for="investment" class="form-label">Monthly Investment Amount (₹):</label>
+                <input type="number" step="0.01" class="form-control" id="investment" name="investment" placeholder="e.g., 5000" min="0.01" required>
+            </div>
+            <div class="mb-4">
+                <label for="growth_rate" class="form-label">Growth in Investment Amount (%):</label>
+                <input type="number" step="0.01" class="form-control" id="growth_rate" name="growth_rate" placeholder="e.g., 5" min="0" required>
+            </div>
+            <div class="mb-4">
+                <label for="rate_of_return" class="form-label">Expected Rate of Return (%):</label>
+                <input type="number" step="0.01" class="form-control" id="rate_of_return" name="rate_of_return" placeholder="e.g., 12" min="1" max="50" required>
+            </div>
+            <div class="mb-4">
+                <label for="inflation_rate" class="form-label">Expected Inflation Rate (%):</label>
+                <input type="number" step="0.01" class="form-control" id="inflation_rate" name="inflation_rate" placeholder="e.g., 3" min="0" required>
+                <a href="https://tradingeconomics.com/" target="_blank" class="link-info">Check Inflation Rates</a>
+            </div>
+            <div class="mb-4">
+                <label for="tenure" class="form-label">Tenure (Years):</label>
+                <input type="number" class="form-control" id="tenure" name="tenure" placeholder="e.g., 10" min="1" max="50" required>
+            </div>
+            <button type="submit" class="btn btn-custom">Calculate</button>
+        </form>
+    </div>
+
+    <div class="result-section">
+        <div id="result_message" class="d-none">
+            <h4>--- Step-Up SIP Investment Details ---</h4>
+            <p><strong>Total Amount Invested:</strong> <span id="total_invested"></span></p>
+            <p><strong>Total Earnings:</strong> <span id="total_earnings"></span></p>
+            <p><strong>Total Corpus Value:</strong> <span id="total_corpus_value"></span></p>
+            <p><strong>Total Corpus Value Adjusted for Inflation:</strong> <span id="adjusted_corpus_value"></span></p>
+        </div>
+        
+        {% if data %}
+            <h2>Investment Growth Over Time</h2>
+            <canvas id="investmentChart" width="400" height="200"></canvas>
+        {% endif %}
+    </div>
+</div>
+
+<!-- jQuery and Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Custom Script -->
+<script>
+    $(document).ready(function () {
+        $('#stepup-sip-calculator-form').on('submit', function (e) {
+            e.preventDefault();
+            const formData = $(this).serialize();
+            
+            $.ajax({
+                type: 'POST',
+                url: '/step-up-calculator',
+                data: formData,
+                success: function (response) {
+                    const result = response.result_message;
+                    
+                    if (typeof result === 'string') {
+                        // Display error message
+                        $('#result_message').removeClass('d-none').html(`<p style="color:red;">${result}</p>`);
+                    } else {
+                        // Update results
+                        $('#total_invested').text(result.total_invested);
+                        $('#total_earnings').text(result.total_earnings);
+                        $('#total_corpus_value').text(result.total_corpus_value);
+                        $('#adjusted_corpus_value').text(result.adjusted_corpus_value);
+                        $('#result_message').removeClass('d-none');
+                        
+                        // Render Chart
+                        if (response.data) {
+                            renderChart(response.data);
+                        }
+                    }
+                },
+                error: function () {
+                    $('#result_message').removeClass('d-none').html('<p style="color:red;">An error occurred. Please try again.</p>');
+                }
+            });
+        });
+        
+        function renderChart(data) {
+            const ctx = document.getElementById('investmentChart').getContext('2d');
+            
+            // Destroy existing chart if it exists
+            if (window.investmentChart instanceof Chart) {
+                window.investmentChart.destroy();
+            }
+            
+            const labels = Object.keys(data).map(year => `Year ${year}`);
+            const values = Object.values(data);
+            
+            window.investmentChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Corpus Value (₹)',
+                        data: values,
+                        borderColor: '#4a90e2',
+                        backgroundColor: 'rgba(74, 144, 226, 0.2)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Investment Growth Over Time',
+                            font: {
+                                size: 18
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    // Format y-axis labels in Indian currency
+                                    if (value >= 1_00_00_00_000) {
+                                        return '₹ ' + (value / 1_00_00_00_000).toFixed(2) + ' Crores';
+                                    } else if (value >= 1_00_00_000) {
+                                        return '₹ ' + (value / 1_00_000).toFixed(2) + ' Lakhs';
+                                    } else {
+                                        return '₹ ' + value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

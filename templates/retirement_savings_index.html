@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Planner</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background-color: #0d142f; 
+            margin: 0; 
+            padding: 0; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: auto; 
+            padding: 20px; 
+            background-color: white; 
+            border-radius: 8px; 
+            box-shadow: 0 0 10px rgba(0,0,0,0.15); 
+            aspect-ratio: 16 / 9;
+        }
+        h2 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 1.5em;
+        }
+        #result { 
+            margin-top: 20px; 
+            text-align: center;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #555;
+        }
+        button {
+            background-color: #0062cc;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #myChart {
+            margin-top: 30px;
+        }
+        .alert-danger {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container mt-5">
+    <h2>Retirement Planner</h2>
+    <form id="retirementForm">
+        <div class="form-group">
+            <label for="choice">Select Calculation:</label>
+            <select id="choice" name="option" class="form-control" required>
+                <option value="" disabled selected>Select an option</option>
+                <option value="1">Calculate Monthly Savings Needed</option>
+                <option value="2">Calculate Amount at Retirement</option>
+                <option value="3">Calculate Years Until Retirement</option>
+            </select>
+        </div>
+        <div id="inputFields"></div>
+        <button type="submit" class="btn btn-primary mt-3">Calculate</button>
+    </form>
+
+    <div id="result"></div>
+    <canvas id="myChart" width="400" height="400" style="display:none;"></canvas>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#choice').change(function () {
+            let choice = $(this).val();
+            let inputHtml = '';
+
+            $('#inputFields').html('');
+
+            if (choice === '1') {  
+                inputHtml += `
+                    <div class="form-group">
+                        <label for="currently_saved">Currently Saved (₹):</label>
+                        <input type="number" name="currently_saved" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="amount_at_retirement">Amount at Retirement (₹):</label>
+                        <input type="number" name="amount_at_retirement" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="years_until_retirement">Years Until Retirement:</label>
+                        <input type="number" name="years_until_retirement" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="annual_return_rate">Annual Return Rate (%):</label>
+                        <input type="number" name="annual_return_rate" class="form-control" required min="0" max="100" step="0.01">
+                    </div>`;
+            } else if (choice === '2') {  
+                inputHtml += `
+                    <div class="form-group">
+                        <label for="currently_saved">Currently Saved (₹):</label>
+                        <input type="number" name="currently_saved" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_savings">Monthly Savings (₹):</label>
+                        <input type="number" name="monthly_savings" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="years_until_retirement">Years Until Retirement:</label>
+                        <input type="number" name="years_until_retirement" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="annual_return_rate">Annual Return Rate (%):</label>
+                        <input type="number" name="annual_return_rate" class="form-control" required min="0" max="100" step="0.01">
+                    </div>`;
+            } else if (choice === '3') {  
+                inputHtml += `
+                    <div class="form-group">
+                        <label for="currently_saved">Currently Saved (₹):</label>
+                        <input type="number" name="currently_saved" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="amount_at_retirement">Amount at Retirement (₹):</label>
+                        <input type="number" name="amount_at_retirement" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_savings">Monthly Savings (₹):</label>
+                        <input type="number" name="monthly_savings" class="form-control" required min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="annual_return_rate">Annual Return Rate (%):</label>
+                        <input type="number" name="annual_return_rate" class="form-control" required min="0" max="100" step="0.01">
+                    </div>`;
+            }
+
+            $('#inputFields').html(inputHtml);
+        });
+
+        $('#retirementForm').submit(function (event) {
+            event.preventDefault();
+            let data = $(this).serialize(); 
+
+            $('#result').html('');
+            $('#myChart').hide().remove(); 
+
+            $.post('/retirement_planner', data, function (response) {
+                if (response.error) {
+                    $('#result').html(`<div class="alert alert-danger">${response.error}</div>`);
+                } else {
+                    let resultHtml = `<h4>Result:</h4><p>${response.result}</p>`;
+                    $('#result').html(resultHtml);
+
+                    if (response.chartType) {
+                        $('.container').append('<canvas id="myChart" width="400" height="400"></canvas>');
+                        $('#myChart').show();
+                        const ctx = document.getElementById('myChart').getContext('2d');
+                        let data = {
+                            labels: ['Amount'],
+                            datasets: [{
+                                data: [parseFloat(response.result.replace(/₹|,/g, ''))],
+                                backgroundColor: ['#36A2EB'],
+                                hoverOffset: 4
+                            }]
+                        };
+                        new Chart(ctx, { type: 'pie', data: data });
+                    }
+                }
+            }).fail(function (jqXHR, textStatus) {
+                $('#result').html(`<div class="alert alert-danger">Error: ${textStatus}</div>`);
+            });
+        });
+    });
+</script>
+</body>
+</html>

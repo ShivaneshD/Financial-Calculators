@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Analysis Calculator</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <style>
+        .equal-height {
+            display: flex;
+            height: 100vh;
+        }
+        .scrollable-table {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+<div class="container-fluid mt-5">
+    <div class="row equal-height">
+        <!-- Left side: Input form -->
+        <div class="col-md-6 border-right pr-4">
+            <h2>Loan Analysis Calculator</h2>
+            <form id="loanAnalysisForm">
+                <div class="form-group">
+                    <label for="choice">Select Calculation:</label>
+                    <select id="choice" class="form-control" required>
+                        <option value="" disabled selected>Select an option</option>
+                        <option value="1">Calculate Monthly Payment</option>
+                        <option value="2">Calculate Loan Amount</option>
+                        <option value="3">Calculate Loan Term</option>
+                    </select>
+                </div>
+                <div id="inputFields"></div>
+                <button type="submit" class="btn btn-primary">Calculate</button>
+            </form>
+        </div>
+
+        <!-- Right side: Output results -->
+        <div class="col-md-6 pl-4">
+            <div id="result" class="mt-4"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#choice').change(function () {
+            let choice = $(this).val();
+            let inputHtml = '';
+
+            if (choice == '1') {
+                inputHtml += `
+                    <div class="form-group">
+                        <label for="loan_amount">Loan Amount:</label>
+                        <input type="number" class="form-control" id="loan_amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="annual_interest_rate">Annual Interest Rate (%):</label>
+                        <input type="number" class="form-control" id="annual_interest_rate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_term_years">Loan Term (Years):</label>
+                        <input type="number" class="form-control" id="loan_term_years" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_term_months">Loan Term (Months):</label>
+                        <input type="number" class="form-control" id="loan_term_months" required>
+                    </div>`;
+            } else if (choice == '2') {
+                inputHtml += `
+                    <div class="form-group">
+                        <label for="monthly_payment">Monthly Payment:</label>
+                        <input type="number" class="form-control" id="monthly_payment" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="annual_interest_rate">Annual Interest Rate (%):</label>
+                        <input type="number" class="form-control" id="annual_interest_rate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_term_years">Loan Term (Years):</label>
+                        <input type="number" class="form-control" id="loan_term_years" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loan_term_months">Loan Term (Months):</label>
+                        <input type="number" class="form-control" id="loan_term_months" required>
+                    </div>`;
+            } else if (choice == '3') {
+                inputHtml += `
+                    <div class="form-group">
+                        <label for="loan_amount">Loan Amount:</label>
+                        <input type="number" class="form-control" id="loan_amount" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="annual_interest_rate">Annual Interest Rate (%):</label>
+                        <input type="number" class="form-control" id="annual_interest_rate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="monthly_payment">Monthly Payment:</label>
+                        <input type="number" class="form-control" id="monthly_payment" required>
+                    </div>`;
+            }
+
+            $('#inputFields').html(inputHtml);
+        });
+
+        $('#loanAnalysisForm').submit(function (event) {
+            event.preventDefault();
+            let choice = $('#choice').val();
+            let data = { choice: choice };
+
+            if (choice == '1') {
+                data.loan_amount = $('#loan_amount').val();
+                data.annual_interest_rate = $('#annual_interest_rate').val();
+                data.loan_term_years = $('#loan_term_years').val();
+                data.loan_term_months = $('#loan_term_months').val();
+            } else if (choice == '2') {
+                data.monthly_payment = $('#monthly_payment').val();
+                data.annual_interest_rate = $('#annual_interest_rate').val();
+                data.loan_term_years = $('#loan_term_years').val();
+                data.loan_term_months = $('#loan_term_months').val();
+            } else if (choice == '3') {
+                data.loan_amount = $('#loan_amount').val();
+                data.annual_interest_rate = $('#annual_interest_rate').val();
+                data.monthly_payment = $('#monthly_payment').val();
+            }
+
+            $.post('/loan_analysis', data, function (response) {
+                if (response.error) {
+                    $('#result').html(`<div class="alert alert-danger">${response.error}</div>`);
+                } else {
+                    let resultHtml = `<h4>${response.category}:</h4>`;
+                    resultHtml += `<p>Result: ${response.result}</p>`;
+                    resultHtml += `<p>Total Payment: ${response.total_payment}</p>`;
+                    resultHtml += `<p>Total Interest: ${response.total_interest}</p>`;
+                    resultHtml += `<p>Annual Payment: ${response.annual_payment}</p>`;
+
+                    let scheduleHtml = '<h4>Payment Schedule:</h4><div class="scrollable-table"><table class="table table-striped"><thead><tr><th>Month</th><th>Principal</th><th>Interest</th><th>Balance</th></tr></thead><tbody>';
+                    response.payment_schedule.forEach(payment => {
+                        scheduleHtml += `<tr><td>${payment.month}</td><td>${payment.principal}</td><td>${payment.interest}</td><td>${payment.balance}</td></tr>`;
+                    });
+                    scheduleHtml += '</tbody></table></div>';
+
+                    $('#result').html(resultHtml + scheduleHtml);
+                }
+            }, 'json');
+        });
+    });
+</script>
+</body>
+</html>

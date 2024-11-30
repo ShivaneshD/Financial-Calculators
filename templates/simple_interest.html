@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Interest Calculator with Inflation</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            margin-top: 50px;
+            max-width: 1200px;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #007bff;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            background-color: #007bff;
+            color: white;
+            width: 100%;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+        }
+        .form-section, .result-section {
+            margin-bottom: 30px;
+        }
+        .card {
+            border-radius: 10px;
+        }
+        .form-section .card, .result-section .card {
+            padding: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-section {
+            border-right: 2px solid #007bff;
+            padding-right: 20px;
+        }
+        .result-section {
+            border-left: 2px solid #007bff;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Simple Interest Calculator with Inflation</h2>
+
+        <!-- Form Section -->
+        <form method="POST" action="/simple_interest">
+            <div class="row">
+                <!-- Input fields in a card on the left side -->
+                <div class="col-md-6 form-section">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title">Enter Details</h4>
+                            <div class="form-group">
+                                <label for="principal">Principal Amount (₹):</label>
+                                <input type="number" class="form-control" id="principal" name="principal" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="rate">Nominal Interest Rate (%):</label>
+                                <input type="number" class="form-control" id="rate" name="rate" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="time">Time Period (Years):</label>
+                                <input type="number" class="form-control" id="time" name="time" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="inflation_rate">Inflation Rate (%):</label>
+                                <input type="number" class="form-control" id="inflation_rate" name="inflation_rate" required>
+                                <small>Check inflation rates here: <a href="https://tradingeconomics.com/" target="_blank">Trading Economics</a></small>
+                            </div>
+                            <button type="submit" class="btn btn-custom">Calculate</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result Section in a card on the right side -->
+                {% if si is defined %}
+                <div class="col-md-6 result-section">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h4 class="card-title">Results</h4>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Principal Amount: ₹{{ principal }}</h5>
+                                    <h5>Nominal Interest (without inflation): ₹{{ nominal_si }}</h5>
+                                    <h5>Nominal Total Amount: ₹{{ nominal_total }}</h5>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Real Interest (adjusted for inflation): ₹{{ real_si }}</h5>
+                                    <h5>Real Total Amount: ₹{{ real_total }}</h5>
+                                </div>
+                            </div>
+
+                            <!-- Pie Chart -->
+                            <div class="chart-container mt-4">
+                                <canvas id="interestChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Extract values from the Flask variables
+        var principal = { principal };
+        var real_si = { real_si };
+        var real_total = { real_total };
+
+        // Pie chart data
+        var chartData = {
+            "principal": principal,
+            "interest": real_si,
+            "total": real_total
+        };
+
+        // Initialize the chart
+        var ctx = document.getElementById('interestChart').getContext('2d');
+        var interestChart = new Chart(ctx, {
+            type: 'pie',
+        });
+    </script>
+</body>
+</html>

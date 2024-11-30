@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAGR Calculator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, rgba(10, 10, 30, 1) 0%, rgba(30, 30, 60, 1) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Full viewport height */
+        }
+        h1 {
+            text-align: center;
+            color: #ffffff; /* White text for better visibility */
+            margin-bottom: 30px;
+        }
+        form {
+            width: 100%;
+            max-width: 600px; /* Increased width for the form */
+            margin: auto;
+            background: rgba(255, 255, 255, 0.9); /* Semi-transparent white background */
+            padding: 30px; /* Increased padding for a larger form */
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+        form:hover {
+            transform: translateY(-5px);
+        }
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"],
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s ease;
+        }
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        input[type="submit"] {
+            background-color: #9013fe; /* Main button color */
+            color: white;
+            padding: 12px; /* Increased padding for button */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        input[type="submit"]:hover {
+            background-color: #7a12b2; /* Darker shade for hover effect */
+        }
+        .result {
+            margin-top: 20px;
+            font-size: 20px; /* Increased font size */
+            text-align: center;
+            background-color: #e0f7fa; /* Light blue background for result */
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #b2ebf2; /* Light blue border */
+            color: #00796b; /* Darker teal text */
+            font-weight: bold; /* Bold text */
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .slider {
+            -webkit-appearance: none; /* Remove default appearance for WebKit browsers */
+            -moz-appearance: none; /* Remove default appearance for Firefox */
+            appearance: none; /* Standard property for all browsers */
+            width: 100%;
+            height: 10px;
+            background: #9013fe; /* Purple color for the slider */
+            border-radius: 5px;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+        .slider:hover {
+            opacity: 1; /* Full opacity on hover */
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none; /* Ensure consistent appearance */
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border: 2px solid #9013fe;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #fff;
+            border: 2px solid #9013fe;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        .slider-value {
+            margin-left: 10px;
+            font-weight: bold;
+            color: #333;
+            width: 30px; /* Fixed width for better alignment */
+            text-align: center;
+        }
+        .info-link {
+            display: inline-block;
+            margin-top: 5px;
+            font-size: 12px;
+            color: #007bff; /* Link color */
+            text-decoration: none;
+        }
+        .info-link:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <h1>Compound Annual Growth Rate (CAGR) Calculator</h1>
+        <form method="post">
+            <label for="beginning_value">Beginning Value (₹):</label>
+            <input type="text" id="beginning_value" name="beginning_value" required>
+
+            <label for="ending_value">Ending Value (₹):</label>
+            <input type="text" id="ending_value" name="ending_value" required>
+
+            <label for="tenure">Tenure (in years, up to 50):</label>
+            <div class="slider-container">
+                <input type="range" id="tenure" name="tenure" min="1" max="50" value="1" class="slider" oninput="updateTenureValue(this.value)">
+                <span class="slider-value" id="tenureValue">1</span>
+            </div>
+
+            <label for="inflation_rate">Inflation Rate (%):</label>
+            <input type="text" id="inflation_rate" name="inflation_rate" required>
+            <a href="https://tradingeconomics.com/" class="info-link" target="_blank">Check Inflation Rates</a>
+
+            <input type="submit" value="Calculate CAGR">
+        </form>
+
+        {% if result_message %}
+            <div class="result">{{ result_message }}</div>
+        {% endif %}
+    </div>
+
+    <script>
+        // Function to update the tenure value display
+        function updateTenureValue(value) {
+            document.getElementById('tenureValue').innerText = value;
+        }
+    </script>
+</body>
+</html>
